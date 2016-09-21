@@ -44,7 +44,7 @@ while True:
 
     #Query the database using custom built Library
     data = queryCardID(cardID)
-
+file
     #Indicate to user that card has been read correctly
     LED('GREEN')
 
