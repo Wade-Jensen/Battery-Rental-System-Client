@@ -29,14 +29,14 @@ while read:
 
 	
 
-
+write = 1
 #Write to Memory Block 1
 while write:
     print('Place the card to be written on the PN532...')
 
 	#Authenticate Block 1
     if not pn532.mifare_classic_authenticate_block(uid, 1, PN532.MIFARE_CMD_AUTH_B,
-                                                                           CARD_KEY):
+                                                                           [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]):
         print('Error! Failed to authenticate block 1 with the card.')
         continue
 
