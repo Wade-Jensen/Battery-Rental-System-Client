@@ -24,37 +24,37 @@ while read:
         continue
     # Note that 16 bytes are returned, so only show the first 1 bytes for the block.
     print('Read block 1: 0x{0}'.format(binascii.hexlify(data[:1])))
-	read = 0;
-	print('Exiting Read Loop 1 \n')
+    read = 0;
+    print('Exiting Read Loop 1 \n')
 
 	
 
 
 #Write to Memory Block 1
 while write:
-	print('Place the card to be written on the PN532...')
-	
+    print('Place the card to be written on the PN532...')
+
 	#Authenticate Block 1
-	if not pn532.mifare_classic_authenticate_block(uid, 1, PN532.MIFARE_CMD_AUTH_B,
-                                               CARD_KEY):
-		print('Error! Failed to authenticate block 1 with the card.')
-		continue
-		
-	dataWrite = 42
-	data = bytearray(16)
-	data[0:4] = b'MCPI'  # Header 'MCPI'
-	data[4]   = dataWrite & 0xFF
-	data[5] = 1
-	data[6] = 0xFF
-	
+    if not pn532.mifare_classic_authenticate_block(uid, 1, PN532.MIFARE_CMD_AUTH_B,
+                                                                           CARD_KEY):
+        print('Error! Failed to authenticate block 1 with the card.')
+        continue
+
+    dataWrite = 42
+    data = bytearray(16)
+    data[0:4] = b'MCPI'  # Header 'MCPI'
+    data[4]   = dataWrite & 0xFF
+    data[5] = 1
+    data[6] = 0xFF
+
 	# Write the card.
-	if not pn532.mifare_classic_write_block(1, data):
-		print('Error! Failed to write to the card.')
-		continue
+    if not pn532.mifare_classic_write_block(1, data):
+        print('Error! Failed to write to the card.')
+        continue
 		
-	print('Wrote card successfully!')	
-	print('Exiting Write Loop 1 \n')
-	write = 0
+    print('Wrote card successfully!')	
+    print('Exiting Write Loop 1 \n')
+    write = 0
 
 
 read = 1
@@ -78,5 +78,5 @@ while read:
         continue
     # Note that 16 bytes are returned, so only show the first 1 bytes for the block.
     print('Read block 1: 0x{0}'.format(binascii.hexlify(data[:1])))
-	read = 0;
-	print('Exiting Read Loop 2 \n')
+    read = 0;
+    print('Exiting Read Loop 2 \n')
