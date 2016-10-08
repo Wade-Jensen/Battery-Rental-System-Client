@@ -6,7 +6,7 @@ from collections import namedtuple
 
 #Configure Name, Timestamp and number of batteries I can hold
 name = 'Gerard'
-ts = time.time()
+ts = int(time.time())
 batCap = 3
 
 #Create URL string from information
@@ -14,12 +14,12 @@ batCap = 3
 contactString = "/test/name/%s/time/%s/capacity/%s" % (name,ts,batCap)
 print(contactString)
 
-# #Contact URL and retrieve JSON object
-# req = urllib2.urlopen(contactString)
-# res = req.read()
-# print('JSON Object')
-# print(res)
+#Contact URL and retrieve JSON object
+req = urllib2.urlopen(contactString)
+res = req.read()
+print('JSON Object')
+print(res)
 
-# #Convert JSON into an object with attributes corresponding to dict keys.
-# x = json.loads(res,object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
-# print x.ip
+#Convert JSON into an object with attributes corresponding to dict keys.
+x = json.loads(res,object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
+print x.name, x.date, x.numbatteries
