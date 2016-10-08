@@ -11,7 +11,7 @@ batCap = 3
 
 #Create URL string from information
 
-contactString = "http://52.65.119.99:9000/api/startmachine/numSlots/%s" (batCap)
+contactString = "http://52.65.119.99:9000/api/startmachine/numSlots/%s" % (batCap)
 print(contactString)
 
 #Contact URL and retrieve JSON object
