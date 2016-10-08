@@ -15,7 +15,7 @@ contactString = "52.65.119.99:9000/test/name/%s/time/%s/capacity/%s" % (name,ts,
 print(contactString)
 
 #Contact URL and retrieve JSON object
-req = urllib2.urlopen(contactString)
+req = urllib2.urlopen('52.65.119.99:9000/test/name/Gerard/time/1475406647/capacity/3')
 res = req.read()
 print('JSON Object')
 print(res)
