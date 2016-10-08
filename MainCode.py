@@ -43,7 +43,7 @@ while True:
 	cardScan = 0;		#Card is not currently scanned
 	
 	#Wait until a card is scanned
-	while (cardScan != 1)		
+	while (cardScan != 1)	 :	
 		#Current Sensing:
 			#Check all battery current draws
 			batteryOneCurrent = inaOne.getCurrent_mA()
@@ -51,46 +51,83 @@ while True:
 			batteryThreeCurrent = inaThree.getCurrent_mA()
 			
 			#Check if battery has finished charging (below 5mA is assumed to be charged, provided there is a battery currently connected)
-			if()
+			if() :
 				batteryOneCharged = 1
-			if()
+			if() :
 				batteryTwoCharged = 1
-			if()
+			if() :
 				batteryThreeCharged = 1
 				
 		#Card Scanning:
 		cardID = 							#Check if card is scanned - Read Current Value (DONT USE READ SINCE IT WAITS UNTIL A CARD IS SCANNED)
 		
-		if()				#If a card is scanned
+		if() :				#If a card is scanned
 			cardScan = 1
-			print "Card ID %s" % cardID			#Print Card ID (DEBUGGING PURPOSES)
+			print "Card ID %s" % cardID			#Print Card ID (TESTING)
 			print "Please leave card on scanner until rental/return process is finished"
-		else
+		else :
 			time.sleep(1)		#Pause for 1 second before next loop execution (reduce busy loading)
 	
 	#Rental/Return Process
 		#Check if user intends to rent or return
 		print "Please press 'Rent' or 'Return' for your desired service"
-		while
+		while :
 	
 		#Try and catch block for server contact
 	
 	#Rentals:
-	if(batRent)
+	if(batRent) :
 		print "This is a battery rental"
-		#If I can contact server
-		if()
-			#Determine which battery is free
+		#If I can contact server		
+		if ():
+			#Determine which battery is free			
+			if (batteryOneCharged):											#Proceed through list of batteries
+				allocatedBattery = 1
+				batOneAlloc = 1
+				
+			elif (batteryTwoCharged):
+				allocatedBattery = 2
+				batTwoAlloc = 1
 			
+			elif (batteryThreeCharged):
+				allocatedBattery = 3
+				batThreeAlloc = 1
+			
+			else :
+				print "No batteries charged, please try another machine"	#If no batteries are charged
+				continue			
 		
+			batTime = int(time.time())		#Time battery was rented
+			
+			#Send information to server
+			rentalURL = "http://SOMETHING" %(MACHINE ID, RENTED BATTERY, TIMESTAMP, (NOT IN ORDER))
+			print (rentalURL)		#TESTING
+			
+			#Contact URL and retrieve JSON object
+			req = urllib2.urlopen(rentalURL)
+			res = req.read()
+			print "JSON OBJECT"		#TESTING
+			print (res)
+
+			#Convert JSON into an object with attributes corresponding to dict keys.
+			x = json.loads(res,object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
+			print x.SOMETHING		
 		
-		
-		
-		#Else If I cannot contact server
-		else
+			#Check if user is permitted to rent battery
+			if ():
+			
+			else :
+				print "Insufficienct credit or user otherwise not permitted to rent battery - please remove card"
+				continue
+			
+			#Rent battery out to user
+				#SET LED INDICATING BATTERY, TELL USER TO REMOVE CARD AND BATTERY, UPDATE WHICH BATTERY IS REMOVED AND TIMESTAMP IT
+			
+		#If I cannot contact server
+		else :
 		
 	#Returns:
-	elif(batReturn)
+	elif(batReturn) :
 		print "This is a battery return"
 	
 	print "Execution finished"
