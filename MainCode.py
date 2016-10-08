@@ -22,7 +22,17 @@ inaThree = INA219()
 pn532 = initialise_RFID(18, 25, 23, 24)		#Configure PN532 to the correct I/O pins on the breakout board (i.e. IO18,IO25 etc.)
 
 #Initial Setup
-
+setup = 1
+while setup:
+	#Check if server can be contacted (TRY CATCH BLOCK)
+	
+	
+	
+	
+		setup = 0
+		print "Setup Complete"
+	
+	else :
 
 #Initial variable declaration
 batRent = 0
@@ -40,23 +50,32 @@ batteryOneConnected = #DEFINE THIS ABOVE IN THE INITIAL SETUP WHEN I POLL THE SE
 
 #Main Loop
 while True:
-	cardScan = 0;		#Card is not currently scanned
+	cardScan = 0		#Card is not currently scanned
 	
 	#Wait until a card is scanned
-	while (cardScan != 1)	 :	
+	while (cardScan != 1):
 		#Current Sensing:
 			#Check all battery current draws
 			batteryOneCurrent = inaOne.getCurrent_mA()
 			batteryTwoCurrent = inaTwo.getCurrent_mA()
 			batteryThreeCurrent = inaThree.getCurrent_mA()
 			
-			#Check if battery has finished charging (below 5mA is assumed to be charged, provided there is a battery currently connected)
+			#Check if battery has finished charging and it was previously rented (below 5mA is assumed to be charged, provided there is a battery currently connected)
 			if() :
 				batteryOneCharged = 1
 			if() :
 				batteryTwoCharged = 1
 			if() :
 				batteryThreeCharged = 1
+
+		#Sending data to server (every 30 seconds)
+			#Check server heartbeat (if it can be reached)
+			
+				#Send backlog data to server if any exists
+				
+				#Send battery current draw
+				
+				#Send if battery is fully charged or not? (maybe don't need to, will see)
 				
 		#Card Scanning:
 		cardID = 							#Check if card is scanned - Read Current Value (DONT USE READ SINCE IT WAITS UNTIL A CARD IS SCANNED)
@@ -78,8 +97,8 @@ while True:
 	#Rentals:
 	if(batRent) :
 		print "This is a battery rental"
-		#If I can contact server		
-		if ():
+		#If I can contact server (TRY CATCH BLOCK)
+		if ():		#CHANGE IF TO A TRY AND CATCH BLOCK
 			#Determine which battery is free			
 			if (batteryOneCharged):											#Proceed through list of batteries
 				allocatedBattery = 1
@@ -126,11 +145,26 @@ while True:
 		#If I cannot contact server
 		else :
 		
+			#Read users current credit from card
+			
+			
+			
+			if ():		#If user has enough credit, do battery rental process and instead of contacting server, append to backlog list
+			
+			else :		#Else if credit is insufficient, reject user and continue
+				print "Insufficient credit, please remove card"
+				continue
+				
+				
 	#Returns:
 	elif(batReturn) :
 		print "This is a battery return"
+		#If I can contact server
+		
+		
+		#If I cannot contact server
 	
-	print "Execution finished"
+	print "Execution finished"	#TESTING
 
 
 
