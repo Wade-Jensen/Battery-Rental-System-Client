@@ -7,39 +7,36 @@ import Adafruit_PN532 as PN532			#RFID Breakout
 from Subfact_ina219 import INA219		#Current Sensor Breakout
 import time								#Time library - sleep function
 import datetime							#Datetime library - for return/charge times
+import urllib2							#URL Library for python 2
+import json								#JSON library
+from collections import namedtuple		#For decoding JSON objects into dictionaries
 
-#General Parameters:
-machineID = 'prototype'			#ID of this specific machine
-
-#Battery Parameter Variables:
-	#Note, assumption is that on program initialization, all batteries are connected (may or may not be charged)
-	#If battery is connected, if battery is charged and once battery is charged, when was the battery returned and what was the batteries charge upon return (assuming current flow regulated)
-batteryOneConnect = 1			#Is the battery connected
-batteryOneCharged = 0			#Is the battery charged
-batteryOneReturnStatus = 1		#Has the battery being returned yet (0 is not returned, 1 is returned and 2 is returned and charge level recorded)
-batteryOneReturnTime = 0		#When was the battery returned
-batteryOneReturnCharge = 0		#(Calculated) What charge was the battery returned with
-
-batteryTwoConnect = 1
-batteryTwoCharged = 0
-batteryTwoReturnStatus = 1
-batteryTwoReturnTime = 0
-batteryTwoReturnCharge = 0
-
-batteryThreeConnect = 1
-batteryThreeCharged = 0
-batteryThreeReturnStatus = 1
-batteryThreeReturnTime = 0
-batteryThreeReturnCharge = 0
 
 #Initialize Current Sensors with correct addresses - Each battery has an associated sensor
 inaOne = INA219()		#Base, 0x40
 inaTwo = INA219()		#ETC....
+inaThree = INA219()
 
 
 #Initialize the Reader
 pn532 = initialise_RFID(18, 25, 23, 24)		#Configure PN532 to the correct I/O pins on the breakout board (i.e. IO18,IO25 etc.)
 
+#Initial Setup
+
+
+#Initial variable declaration
+batRent = 0
+batReturn = 0
+
+batteryOneCurrent = 0
+batteryTwoCurrent = 0
+batteryThreeCurrent = 0
+
+batteryOneCharged = 0
+batteryTwoCharged = 0
+batteryThreeCharged = 0
+
+batteryOneConnected = #DEFINE THIS ABOVE IN THE INITIAL SETUP WHEN I POLL THE SERVER
 
 #Main Loop
 while True:
@@ -50,67 +47,52 @@ while True:
 		#Current Sensing:
 			#Check all battery current draws
 			batteryOneCurrent = inaOne.getCurrent_mA()
+			batteryTwoCurrent = inaTwo.getCurrent_mA()
+			batteryThreeCurrent = inaThree.getCurrent_mA()
 			
-			#Check if battery has finished charging
-			if(batteryOneCurrent < TEMP and batteryOneConnect == 1)		#If battery is connected and current draw is below threshold, it is assumed to have finished charging 
+			#Check if battery has finished charging (below 5mA is assumed to be charged, provided there is a battery currently connected)
+			if()
 				batteryOneCharged = 1
-				batteryOneChargeTime = datetime.datetime.now()
-				if(batteryOneReturnStatus == 1)		#If battery one was previously returned
-					batteryOneReturnCharge = 
-					batteryOneReturnStatus = 2		#Charge level recorded
+			if()
+				batteryTwoCharged = 1
+			if()
+				batteryThreeCharged = 1
 				
 		#Card Scanning:
 		cardID = 							#Check if card is scanned - Read Current Value (DONT USE READ SINCE IT WAITS UNTIL A CARD IS SCANNED)
 		
 		if()				#If a card is scanned
 			cardScan = 1
-			print "Card ID %s" % cardID			#Print Card ID
+			print "Card ID %s" % cardID			#Print Card ID (DEBUGGING PURPOSES)
+			print "Please leave card on scanner until rental/return process is finished"
 		else
 			time.sleep(1)		#Pause for 1 second before next loop execution (reduce busy loading)
 	
-	#Determine if this is a return or a rental
-
-	#If rental:
+	#Rental/Return Process
+		#Check if user intends to rent or return
+		print "Please press 'Rent' or 'Return' for your desired service"
+		while
 	
-	#IF IT IS A RENTAL, THEY SCAN ID THEN PRESS A RENT OR RETURN BUTTON
+		#Try and catch block for server contact
 	
-		# Determine which battery is available (if any)
-			#Note - only fully charged batteries currently allowed
-	charge = batteryOneCharged + batteryTwoCharged + batteryThreeCharged
-	if(charge < 1)		#If no batteries are charged, return to beginning of loop
-		print "No batteries currently charged, please try again later"
-		continue
+	#Rentals:
+	if(batRent)
+		print "This is a battery rental"
+		#If I can contact server
+		if()
+			#Determine which battery is free
+			
 		
 		
 		
-		# Record timestamp, Battery & Machine ID & Card Id, and concantenate together
+		
+		#Else If I cannot contact server
+		else
+		
+	#Returns:
+	elif(batReturn)
+		print "This is a battery return"
 	
-		#Get JSON object from server to determine if its ok to release battery, read bool and release battery if so
-		
-	
-	#If return:
-	
-		# Determine which battery has been returned & send an immediate acknowledgement to the server to indicate that the user has returned something
-	if()		#TEMP - BATTERY 1 (MAY NOT BE AN IF STATEMENT, JUST TO GET RETURN LOGIC CORRECT)
-		batteryOneReturnTime = datetime.datetime.now()
-		batteryOneReturnID = cardID
-		
-		
-		# Record timestamp, Battery & Machine ID & Card Id, and concantenate together
-	
-	#If we can get 
-		# Get JSON object from server and write credit to user card
-
-		
-	#Send data to server
-		#Make a dictionary of things to push to the server - if it was able to push it to the server, then remove it from the dictionary
-		#If it was not able to push it to the server, then try again later
-
-
-
-
-
-
 	print "Execution finished"
 
 
