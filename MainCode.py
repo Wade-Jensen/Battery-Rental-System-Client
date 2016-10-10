@@ -159,6 +159,8 @@ while True:
 	#Returns:
 	elif(batReturn) :
 		print "This is a battery return"
+		
+		#ACTUALLY IN TERMS OF BATTERY RETURN THE ONLY POINT I NEED TO CONTACT SERVER IS AT THE END WHEN I SEND DATA AT THIS POINT - I CAN DO THE RETURN PROCESS FIRST
 		#If I can contact server
 		
 		

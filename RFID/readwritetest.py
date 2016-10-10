@@ -22,8 +22,8 @@ while read:
     if data is None:
         print('Failed to read block 1!')
         continue
-    # Note that 16 bytes are returned, so only show the first 1 bytes for the block.
-    print('Read block 1: 0x{0}'.format(binascii.hexlify(data[:1])))
+    # Note that 16 bytes are returned, so only show the first 4 bytes for the block.
+    print('Read block 1: 0x{0}'.format(binascii.hexlify(data[:4])))
     read = 0;
     print('Exiting Read Loop 1 \n')
 
