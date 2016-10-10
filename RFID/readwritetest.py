@@ -1,5 +1,6 @@
 from libRFID import *
 import Adafruit_PN532 as PN532
+import re
 
 #Configure the Reader
 pn532 = initialise_RFID(18, 25, 23, 24)
@@ -41,12 +42,11 @@ while write:
         print('Error! Failed to authenticate block 1 with the card.')
         continue
 
-    dataWrite = 42
+    #Data array size must by 16 bytes
     data = bytearray(16)
-    data[0:4] = b'MCPI'  # Header 'MCPI'
-    data[4]   = dataWrite & 0xFF
-    data[5] = 1
-    data[6] = 0xFF
+    dataWrite = b"4244"
+    data[0:len(dataWrite)] = dataWrite
+    print(len(data))
 
 	# Write the card.
     if not pn532.mifare_classic_write_block(1, data):
@@ -79,5 +79,13 @@ while read:
         continue
     # Note that 16 bytes are returned, so only show the first 1 bytes for the block.
     print('Read block 1: 0x{0}'.format(binascii.hexlify(data[:1])))
+    print('Block 1: '), (data[0:16])
+    #tempString = data[0:16]
+    #print(tempString.find(b'\x00'))
+    #print(data.find(b'\x00'))
+    tempString = data[0:(data.find(b'\x00'))]
+    print(tempString)
+    print(int(tempString))
+    print(int(tempString) + 1)
     read = 0;
     print('Exiting Read Loop 2 \n')
