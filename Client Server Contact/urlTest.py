@@ -11,4 +11,4 @@ print(res)
 
 #Convert JSON into an object with attributes corresponding to dict keys.
 x = json.loads(res,object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
-print x.ip
+print (x.ip)

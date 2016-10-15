@@ -1,4 +1,5 @@
 #This is a test program for reading a RFID card, detecting battery ID, machine ID and sending this data to a server for ENB345
+#Written for Python 2, August-October 2016
 # Author: Gerard Rallos
 
 #Import Libraries:
@@ -10,6 +11,7 @@ import datetime							#Datetime library - for return/charge times
 import urllib2							#URL Library for python 2
 import json								#JSON library
 from collections import namedtuple		#For decoding JSON objects into dictionaries
+import RPi.GPIO as GPIO					#GPIO Pins
 
 
 #Initialize Current Sensors with correct addresses - Each battery has an associated sensor
@@ -47,6 +49,22 @@ batteryTwoCharged = 0
 batteryThreeCharged = 0
 
 batteryOneConnected = #DEFINE THIS ABOVE IN THE INITIAL SETUP WHEN I POLL THE SERVER
+
+SLOT_ONE_LED = 16		#Battery One LED Output
+SLOT_TWO_LED = 20		#Battery Two LED Output
+SLOT_THREE_LED = 21		#Battery Three LED Output
+
+RENTAL_BUTTON = 17		#Rental Switch Input
+RETURN_BUTTON = 27		#Return Switch Input
+
+#Initialize IO Pins
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+GPIO.setup(SLOT_ONE_LED,GPIO.OUT)
+GPIO.setup(SLOT_TWO_LED,GPIO.OUT)
+GPIO.setup(SLOT_THREE_LED,GPIO.OUT)
+GPIO.setup(RENTAL_BUTTON,GPIO.IN)
+GPIO.setup(RETURN_BUTTON,GPIO.IN)
 
 #Main Loop
 while True:
@@ -90,8 +108,20 @@ while True:
 	#Rental/Return Process
 		#Check if user intends to rent or return
 		print "Please press 'Rent' or 'Return' for your desired service"
-		while :
+		buttonPress = 1
+		batRent = 0
+		batReturn = 0
+		
+		while buttonPress:
+			if(GPIO.input(RENTAL_BUTTON))
+				batRent = 1
+				buttonPress = 0
+			elif(GPIO.input(RETURN_BUTTON))
+				batReturn = 1
+				buttonPress = 0
+			time.sleep(0.1)
 	
+		buttonPress = 1
 		#Try and catch block for server contact
 	
 	#Rentals:
@@ -144,15 +174,36 @@ while True:
 			
 		#If I cannot contact server
 		else :
-		
 			#Read users current credit from card
+			read = 1
+			while read:
+				# Check if a card is available to read.
+				uid = pn532.read_passive_target()
+				# Try again if no card is available.
+				if uid is None:
+					continue
+				print('Found card with UID: 0x{0}'.format(binascii.hexlify(uid)))
+				# Authenticate block 1 for reading with default key (0xFFFFFFFFFFFF).
+				if not pn532.mifare_classic_authenticate_block(uid, 1, PN532.MIFARE_CMD_AUTH_B,
+															   [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]):
+					print('Failed to authenticate card')
+					continue
+				# Read block 1 data.
+				data = pn532.mifare_classic_read_block(1)
+				if data is None:
+					print('Failed to read card credit')
+					continue
+				# Note that 16 bytes are returned, so only show the first 1 bytes for the block.
+				tempString = data[0:(data.find(b'\x00'))]
+				userCredit = int(tempString)						#Current credit on card (in cents)
+				print "Current Credit: $%s" %(userCredit / 100)
+				read = 0;
 			
-			
-			
-			if ():		#If user has enough credit, do battery rental process and instead of contacting server, append to backlog list
+			if (userCredit > 0):		#If user has enough credit, do battery rental process and instead of contacting server, append to backlog list
 			
 			else :		#Else if credit is insufficient, reject user and continue
 				print "Insufficient credit, please remove card"
+				time.sleep(5)
 				continue
 				
 				
