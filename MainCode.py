@@ -10,9 +10,9 @@ import time								#Time library - sleep function
 import datetime							#Datetime library - for return/charge times
 import urllib2							#URL Library for python 2
 import json								#JSON library
+import threading						#Threading for server heartbeat
 from collections import namedtuple		#For decoding JSON objects into dictionaries
 import RPi.GPIO as GPIO					#GPIO Pins
-
 
 #Initialize Current Sensors with correct addresses - Each battery has an associated sensor
 inaOne = INA219()		#Base, 0x40
@@ -23,19 +23,51 @@ inaThree = INA219()
 #Initialize the Reader
 pn532 = initialise_RFID(18, 25, 23, 24)		#Configure PN532 to the correct I/O pins on the breakout board (i.e. IO18,IO25 etc.)
 
+#Define Functions:
+def serverPing ( urlString ):		#Accepts a string
+	try:
+	req = urllib2.urlopen(urlString, timeout = 1)	#Ping server
+
+	except urllib2.HTTPError, e:		#Catch HTTP Error
+		print 'Failed - Error Code: %s' %e.code
+		contact = 0
+		
+	except urllib2.URLError as e:		#URL Error Catch
+		print type(e)    
+		print 'Error in URL Address'			
+		contact = 0
+		
+	else :
+		contact = 1						#If no error is caught, server can be contacted
+	
+	return contact
+
+def serverHeartbeat () :
+	threading.Timer(30.0, serverHeartbeat).start()
+	serverContact = serverPing ('URL')
+
+	if(serverContact) :
+		#Send backlog data to server if any exists
+				
+		#Send battery current draw
+				
+		#Send if battery is fully charged or not? (maybe don't need to, will see)	
+		
+
 #Initial Setup
 setup = 1
 while setup:
-	#Check if server can be contacted (TRY CATCH BLOCK)
+	serverConnection = serverPing ('52.63.139.51/api/alive' )		#Check if server can be contacted
 	
-	
-	
+
+	if (serverConnection) :
 	
 		setup = 0
-		print "Setup Complete"
-	
+		print 'Setup Complete'	
 	else :
-
+		print  'Failed to Contact Server, trying again in 5 seconds'
+		time.sleep(5)
+	
 #Initial variable declaration
 batRent = 0
 batReturn = 0
@@ -66,6 +98,9 @@ GPIO.setup(SLOT_THREE_LED,GPIO.OUT)
 GPIO.setup(RENTAL_BUTTON,GPIO.IN)
 GPIO.setup(RETURN_BUTTON,GPIO.IN)
 
+#Initialize server heartbeat thread
+serverHeartbeat()
+
 #Main Loop
 while True:
 	cardScan = 0		#Card is not currently scanned
@@ -85,16 +120,7 @@ while True:
 				batteryTwoCharged = 1
 			if() :
 				batteryThreeCharged = 1
-
-		#Sending data to server (every 30 seconds)
-			#Check server heartbeat (if it can be reached)
-			
-				#Send backlog data to server if any exists
-				
-				#Send battery current draw
-				
-				#Send if battery is fully charged or not? (maybe don't need to, will see)
-				
+	
 		#Card Scanning:
 		cardID = 							#Check if card is scanned - Read Current Value (DONT USE READ SINCE IT WAITS UNTIL A CARD IS SCANNED)
 		
@@ -122,13 +148,13 @@ while True:
 			time.sleep(0.1)
 	
 		buttonPress = 1
-		#Try and catch block for server contact
+		
+	serverConnection = serverPing ('52.63.139.51/api/alive' )	#Check if server can be contacted
 	
 	#Rentals:
 	if(batRent) :
 		print "This is a battery rental"
-		#If I can contact server (TRY CATCH BLOCK)
-		if ():		#CHANGE IF TO A TRY AND CATCH BLOCK
+		if (serverConnection):												#If I can contact server
 			#Determine which battery is free			
 			if (batteryOneCharged):											#Proceed through list of batteries
 				allocatedBattery = 1
@@ -172,8 +198,7 @@ while True:
 			#Rent battery out to user
 				#SET LED INDICATING BATTERY, TELL USER TO REMOVE CARD AND BATTERY, UPDATE WHICH BATTERY IS REMOVED AND TIMESTAMP IT
 			
-		#If I cannot contact server
-		else :
+		else :															#If I cannot contact server
 			#Read users current credit from card
 			read = 1
 			while read:
@@ -193,8 +218,7 @@ while True:
 				if data is None:
 					print('Failed to read card credit')
 					continue
-				# Note that 16 bytes are returned, so only show the first 1 bytes for the block.
-				tempString = data[0:(data.find(b'\x00'))]
+				tempString = data[0:(data.find(b'\x00'))]			#Remove empty bits from data string
 				userCredit = int(tempString)						#Current credit on card (in cents)
 				print "Current Credit: $%s" %(userCredit / 100)
 				read = 0;
