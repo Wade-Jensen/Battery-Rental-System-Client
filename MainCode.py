@@ -55,10 +55,11 @@ def serverHeartbeat () :
 			for x in range(0,numBacklog) :
 				request = urllib2.urlopen(backlogData.pop(), timeout = 1)	#Send backlog data
 		
-		#Send battery current draw
+		#Send battery current draw if the battery is connected
 			
 		#Send if battery is fully charged or not? (maybe don't need to, will see)	
-		
+	else :
+		#APPEND CURRENT DRAW TO BACKLOG DATA (MAY HAVE TO CONSIDER LIMITATIONS IF I HAVE HOURS OF BACKLOG DATA - MAYBE ONLY SEND BATCHES OF IT AT A TIME)
 
 #Initial Setup
 setup = 1
