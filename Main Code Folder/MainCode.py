@@ -21,7 +21,7 @@ inaOne = INA219(0x40)       #Base, 0x40
 inaTwo = INA219(0x40)       #A0 Bridge 0x41
 inaThree = INA219(0x40)     #A1 Bridge 0x44
 
-timeoutTimer = 9999
+timeoutTimer = 20
 
 #Initialize the Reader
 pn532 = initialise_RFID(18, 25, 23, 24)     #Configure PN532 to the correct I/O pins on the breakout board (i.e. IO18,IO25 etc.)
@@ -47,7 +47,7 @@ def serverPing ( urlString ):       #Accepts a string
 
 def serverHeartbeat () :
     threading.Timer(30.0, serverHeartbeat).start()
-    serverContact = serverPing ('URL')
+    serverContact = serverPing('http://52.63.34.239:9000/api/alive')
 
     #Get Battery Current Draw:
     #Send battery current draw even if battery is not connected
@@ -73,7 +73,7 @@ def serverHeartbeat () :
 #Initial Setup
 #Machine Specific Configuration
 numSlots = 3
-machineLocation = 'QUT GP'
+machineLocation = 'QUT%20GP'
 
 setup = 1
 while setup:
@@ -84,11 +84,13 @@ while setup:
         initialRequest = urllib2.urlopen(setupURL, timeout = timeoutTimer)
         initialRes = initialRequest.read()
         
-        initalConfig = json.loads(initialRes,object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
+        initialConfig = json.loads(initialRes,object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
         
-        machineID = initalConfig.id                 #Machine ID
-        numBatteries = initalConfig.numBatteries    #Number of batteries in machine
-        print  "Machine ID: %s,  Connected Batteries: %s" % initalConfig.id, initalConfig.numBatteries
+        machineID = initialConfig.id                 #Machine ID
+        numBatteries = initialConfig.numBatteries    #Number of batteries in machine
+        print initialConfig
+        print initialConfig.id, 
+        print initialConfig.numBatteries
     
         setup = 0
         print 'Setup Complete'  
@@ -142,13 +144,14 @@ while True:
     cardScan = 0        #Card is not currently scanned
     
     #Turn off all LED's for battery slots
-    GPIO.output(SLOT_ONE_LED_LED,GPIO.LOW)  
-    GPIO.output(SLOT_TWO_LED_LED_LED,GPIO.LOW)  
-    GPIO.output(SLOT_THREE_LED_LED_LED,GPIO.LOW)    
+    GPIO.output(SLOT_ONE_LED,GPIO.LOW)  
+    GPIO.output(SLOT_TWO_LED,GPIO.LOW)  
+    GPIO.output(SLOT_THREE_LED,GPIO.LOW)    
     
     #Wait until a card is scanned
     while (cardScan != 1):
         #Current Sensing:
+            print "Initial Loop"
             #Check all battery current draws
             batteryOneCurrent = inaOne.getCurrent_mA()
             batteryTwoCurrent = inaTwo.getCurrent_mA()
@@ -174,7 +177,7 @@ while True:
                                     fullCharge = urllib2.urlopen(returnURL)
                 else :
                                     backlogData.append(chargeString)                
-            if(battetyThreeCurrent < 5 & batThreeAlloc == 0) :
+            if(batteryThreeCurrent < 5 & batThreeAlloc == 0) :
                 batteryThreeCharged = 1
                 serverConnection = serverPing ('http://52.63.34.239:9000/api/alive')        #Check if server can be contacted
                 fullTime = int(time.time())
@@ -187,6 +190,7 @@ while True:
         #Card Scanning:
             cardID = pn532.read_passive_target()    #Check if card is scanned
                         
+
             if cardID is None:              
                 time.sleep(1)       #Pause for 1 second before next loop execution (reduce busy loading)
                 continue
@@ -203,15 +207,17 @@ while True:
     batReturn = 0
         
     while buttonPress:
-        if(GPIO.input(RENTAL_BUTTON)) :
+        if(~GPIO.input(RENTAL_BUTTON)) :
             batRent = 1
             buttonPress = 0
-        elif(GPIO.input(RETURN_BUTTON)) :
+        elif(~GPIO.input(RETURN_BUTTON)) :
             batReturn = 1
             buttonPress = 0
         time.sleep(0.1)
     
     buttonPress = 1
+    print batRent
+    print batReturn
         
     #Rentals:
     if (batRent) :
@@ -242,28 +248,29 @@ while True:
             print (rentalRes)
 
             #Convert JSON into an object with attributes corresponding to dict keys.
-            rentalJson = json.loads(res,object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
+            rentalJson = json.loads(rentalRes,object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
             print rentalJson
         
             #Check if user is permitted to rent battery
-            if (rentalJson.isUserBalancePositive == 'true') :
+            if (rentalJson.releaseBattery) :
                 #Rent battery out to user
                     #SET LED INDICATING BATTERY, TELL USER TO REMOVE CARD AND BATTERY, UPDATE WHICH BATTERY IS REMOVED
                 if(allocatedBattery == 1) :
-                    GPIO.output(SLOT_ONE_LED_LED,GPIO.HIGH)
+                    GPIO.output(SLOT_ONE_LED,GPIO.HIGH)
                     batOneAlloc = 1
 
                 elif(allocatedBattery == 2) :
-                    GPIO.output(SLOT_TWO_LED_LED_LED,GPIO.HIGH)
+                    GPIO.output(SLOT_TWO_LED,GPIO.HIGH)
                     batTwoAlloc = 1                 
                     
                 elif(allocatedBattery == 3) :
-                    GPIO.output(SLOT_THREE_LED_LED_LED,GPIO.HIGH)   
+                    GPIO.output(SLOT_THREE_LED,GPIO.HIGH)   
                     batThreeAlloc = 1
                             
                 print "Your battery is indicated by the light, please remove battery and remove your card, thank you!"
             else :
                 print "Insufficienct credit or user otherwise not permitted to rent battery - please remove card"
+                time.sleep(5)
                 continue
             
         else :                                                          #If I cannot contact server
@@ -296,17 +303,17 @@ while True:
                 if (batteryOneCharged):                                         #Proceed through list of batteries
                     allocatedBattery = 1
                     batOneAlloc = 1
-                    GPIO.output(SLOT_ONE_LED_LED,GPIO.HIGH) 
+                    GPIO.output(SLOT_ONE_LED,GPIO.HIGH) 
         
                 elif (batteryTwoCharged):
                     allocatedBattery = 2
                     batTwoAlloc = 1
-                    GPIO.output(SLOT_TWO_LED_LED,GPIO.HIGH)     
+                    GPIO.output(SLOT_TWO_LED,GPIO.HIGH)     
                     
                 elif (batteryThreeCharged):
                     allocatedBattery = 3
                     batThreeAlloc = 1
-                    GPIO.output(SLOT_THREE_LED_LED,GPIO.HIGH)       
+                    GPIO.output(SLOT_THREE_LED,GPIO.HIGH)       
                     
                 else :
                     print "No batteries charged, please try another machine"    #If no batteries are charged
@@ -314,7 +321,7 @@ while True:
             
                 #Create string to insert into deque backlog
                 batTime = int(time.time())      #Time battery was rented
-                rentalURL = "http://52.63.34.239:9000/api/requestbattery/machineId/%s/machineSlot/%s/cardId/%s/time/%s" % (machineID, allocatedBattery, cardID, batTime)
+                rentalURL = "http://52.63.34.239:9000/api/requestbattery/machineId/%s/machineSlot/%s/cardId/%s/time/%s" % (machineID, (allocatedBattery - 1), cardID, batTime)
                 backlogData.append(rentalURL)
                 print (rentalURL)       #TESTING                
                     
@@ -345,7 +352,7 @@ while True:
         
         batTime = int(time.time())      #Time battery was returned
         
-        returnURL = "http://52.63.34.239:9000/api/returnbattery/machineId/%s/machineSlot/%s/cardId/%s/time/%s" % (machineID, returnedBattery, cardID, batTime)      #Create the return url
+        returnURL = "http://52.63.34.239:9000/api/returnbattery/machineId/%s/machineSlot/%s/cardId/%s/time/%s" % (machineID, (returnedBattery - 1), cardID, batTime)      #Create the return url
         serverConnection = serverPing ('52.63.139.51/api/alive' )                                   #Check if server can be contacted       
         
         #If I can contact server
@@ -359,7 +366,7 @@ while True:
             print (res)
 
             #Convert JSON into an object with attributes corresponding to dict keys.
-            returnJson = json.loads(res,object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
+            returnJson = json.loads(resReturn,object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
             print returnJson                
             
             #Write credit to card
@@ -386,9 +393,10 @@ while True:
         #If I cannot contact server 
         else :
             backlogData.append(returnURL)
-            print (returnURL)       #TESTING    
+            print (returnURL)       #TESTING
+            
         
-        
+    time.sleep(5)
     print "Execution finished"  #TESTING
 
 
