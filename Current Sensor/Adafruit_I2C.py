@@ -48,7 +48,7 @@ class Adafruit_I2C :
       if (self.debug):
         print "I2C: Wrote 0x%02X to register 0x%02X" % (value, reg)
     except IOError, err:
-      print "Error accessing 0x%02X: Check your I2C address" % self.address
+      print "Error accessing 0x%02X: Check your I2C address51" % self.address
       return -1
 
   def writeList(self, reg, list):
@@ -59,7 +59,7 @@ class Adafruit_I2C :
         print list
       self.bus.write_i2c_block_data(self.address, reg, list)
     except IOError, err:
-      print "Error accessing 0x%02X: Check your I2C address" % self.address
+      print "Error accessing 0x%02X: Check your I2C address62" % self.address
       return -1
 
   def readList(self, reg, length):
@@ -72,7 +72,7 @@ class Adafruit_I2C :
         print results
       return results
     except IOError, err:
-      print "Error accessing 0x%02X: Check your I2C address" % self.address
+      print "Error accessing 0x%02X: Check your I2C address75" % self.address
       return -1
 
   def readU8(self, reg):
@@ -83,7 +83,7 @@ class Adafruit_I2C :
         print "I2C: Device 0x%02X returned 0x%02X from reg 0x%02X" % (self.address, result & 0xFF, reg)
       return result
     except IOError, err:
-      print "Error accessing 0x%02X: Check your I2C address" % self.address
+      print "Error accessing 0x%02X: Check your I2C address86" % self.address
       return -1
 
   def readS8(self, reg):
@@ -97,7 +97,7 @@ class Adafruit_I2C :
       else:
         return result
     except IOError, err:
-      print "Error accessing 0x%02X: Check your I2C address" % self.address
+      print "Error accessing 0x%02X: Check your I2C address100" % self.address
       return -1
 
   def readU16(self, reg):
@@ -109,7 +109,7 @@ class Adafruit_I2C :
         print "I2C: Device 0x%02X returned 0x%04X from reg 0x%02X" % (self.address, result & 0xFFFF, reg)
       return result
     except IOError, err:
-      print "Error accessing 0x%02X: Check your I2C address" % self.address
+      print "Error accessing 0x%02X: Check your I2C address112" % self.address
       return -1
 
   def readS16(self, reg):
@@ -123,5 +123,5 @@ class Adafruit_I2C :
         print "I2C: Device 0x%02X returned 0x%04X from reg 0x%02X" % (self.address, result & 0xFFFF, reg)
       return result
     except IOError, err:
-      print "Error accessing 0x%02X: Check your I2C address" % self.address
+      print "Error accessing 0x%02X: Check your I2C address126" % self.address
       return -1
