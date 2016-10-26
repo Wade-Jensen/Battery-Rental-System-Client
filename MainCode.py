@@ -17,10 +17,9 @@ from collections import deque			#For backlog data storage
 import RPi.GPIO as GPIO					#GPIO Pins
 
 #Initialize Current Sensors with correct addresses - Each battery has an associated sensor
-inaOne = INA219()		#Base, 0x40
-inaTwo = INA219()		#ETC....
-inaThree = INA219()
-
+inaOne = INA219(0x40)		#Base, 0x40
+inaTwo = INA219(0x41)		#A0 Bridge
+inaThree = INA219(0x44)		#A1 Bridge
 
 #Initialize the Reader
 pn532 = initialise_RFID(18, 25, 23, 24)		#Configure PN532 to the correct I/O pins on the breakout board (i.e. IO18,IO25 etc.)
@@ -28,7 +27,7 @@ pn532 = initialise_RFID(18, 25, 23, 24)		#Configure PN532 to the correct I/O pin
 #Define Functions:
 def serverPing ( urlString ):		#Accepts a string
 	try:
-	request = urllib2.urlopen(urlString, timeout = 1)	#Ping server
+		request = urllib2.urlopen(urlString, timeout = 1)	#Ping server
 
 	except urllib2.HTTPError, e:		#Catch HTTP Error
 		print 'Failed - Error Code: %s' %e.code
@@ -60,10 +59,10 @@ def serverHeartbeat () :
 		if(len(backlogData)) :
 			for x in range(0,numBacklog) :
 				request = urllib2.urlopen(backlogData.pop(), timeout = 1)	#Send backlog data
-		
+				
+				
+	#else :
 	
-
-	else :
 		#APPEND CURRENT DRAW TO BACKLOG DATA (MAY HAVE TO CONSIDER LIMITATIONS IF I HAVE HOURS OF BACKLOG DATA - MAYBE ONLY SEND BATCHES OF IT AT A TIME)
 
 		
@@ -72,15 +71,22 @@ def serverHeartbeat () :
 #Initial Setup
 #Machine Specific Configuration
 numSlots = 3
-machineLocation = 'QUT GP'
+machineLocation = 'QUTGP'
 
 setup = 1
 while setup:
-	serverConnection = serverPing ('http://52.63.139.51/api/alive' )		#Check if server can be contacted
+	serverConnection = serverPing ('http://52.63.34.239:9000/api/alive')		#Check if server can be contacted
 	if (serverConnection) :
 	
-	setupURL = "http://52.63.139.51/api/startmachine/numSlots/%s/textlocation/%s" % (numSlots,machineLocation)
-	initialRequest = urllib2.urlopen(setupURL, timeout = 1)
+		setupURL = "http://52.63.34.239:9000/api/startmachine/numSlots/%s/textlocation/%s" % (numSlots,machineLocation)
+		initialRequest = urllib2.urlopen(setupURL, timeout = 1)
+		initialRes = initialRequest.read()
+		
+		initalConfig = json.loads(initialRes,object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
+		
+		machineID = initalConfig.id					#Machine ID
+		numBatteries = initalConfig.numBatteries	#Number of batteries in machine
+		print  "Machine ID: %s,  Connected Batteries: %s" % initalConfig.id, initalConfig.numBatteries
 	
 		setup = 0
 		print 'Setup Complete'	
@@ -144,9 +150,9 @@ while True:
 			#Check if battery has finished charging and it was previously rented (below 5mA is assumed to be charged, provided there is a battery currently connected)
 			if() :	#ALSO SEND A MESSAGE FOR WHEN THE BATTERY IS FULLY CHARGES
 				batteryOneCharged = 1
-				serverConnection = serverPing ('http://52.63.139.51/api/alive' )		#Check if server can be contacted
+				serverConnection = serverPing ('http://52.63.34.239:9000/api/alive')		#Check if server can be contacted
 				fullTime = int(time.time())
-				chargeString = "http://52.63.139.51/api/fullcharge/machineId/%s/time/%s/machineSlot/%s" % (MACHINE ID, fullTime, 1)
+				chargeString = "http://52.63.34.239:9000/api/fullcharge/machineId/%s/time/%s/machineSlot/%s" % (MACHINE ID, fullTime, 1)
 				if(serverConnection)
 					fullCharge = urllib2.urlopen(returnURL)
 				else
@@ -154,72 +160,64 @@ while True:
 				
 			if() :
 				batteryTwoCharged = 1
-				serverConnection = serverPing ('http://52.63.139.51/api/alive' )		#Check if server can be contacted
+				serverConnection = serverPing ('http://52.63.34.239:9000/api/alive')		#Check if server can be contacted
 				fullTime = int(time.time())
-				chargeString = "http://52.63.139.51/api/fullcharge/machineId/%s/time/%s/machineSlot/%s" % (MACHINE ID, fullTime, 2)
+				chargeString = "http://52.63.34.239:9000/api/fullcharge/machineId/%s/time/%s/machineSlot/%s" % (MACHINE ID, fullTime, 2)
 				if(serverConnection)
 					fullCharge = urllib2.urlopen(returnURL)
 				else
 				backlogData.append(chargeString)				
 			if() :
 				batteryThreeCharged = 1
-				serverConnection = serverPing ('http://52.63.139.51/api/alive' )		#Check if server can be contacted
+				serverConnection = serverPing ('http://52.63.34.239:9000/api/alive')		#Check if server can be contacted
 				fullTime = int(time.time())
-				chargeString = "http://52.63.139.51/api/fullcharge/machineId/%s/time/%s/machineSlot/%s" % (MACHINE ID, fullTime, 3)
+				chargeString = "http://52.63.34.239:9000/api/fullcharge/machineId/%s/time/%s/machineSlot/%s" % (MACHINE ID, fullTime, 3)
 				if(serverConnection)
 					fullCharge = urllib2.urlopen(returnURL)
 				else
 				backlogData.append(chargeString)				
 	
 		#Card Scanning:
-		cardID = 							#Check if card is scanned - Read Current Value (DONT USE READ SINCE IT WAITS UNTIL A CARD IS SCANNED)
+		cardID = pn532.read_passive_target()							#Check if card is scanned
 		
-		if() :				#If a card is scanned
-			cardScan = 1
-			print "Card ID %s" % cardID			#Print Card ID (TESTING)
-			print "Please leave card on scanner until rental/return process is finished"
-		else :
+		if cardID is None:				
 			time.sleep(1)		#Pause for 1 second before next loop execution (reduce busy loading)
+			continue
+									
+		cardScan = 1
+		print "Card ID %s" % cardID			#Print Card ID (TESTING)
+		print "Please leave card on scanner until rental/return process is finished"
 	
 	#Rental/Return Process
-		#Check if user intends to rent or return
-		print "Please press 'Rent' or 'Return' for your desired service"
-		buttonPress = 1
-		batRent = 0
-		batReturn = 0
+	#Check if user intends to rent or return
+	print "Please press 'Rent' or 'Return' for your desired service"
+	buttonPress = 1
+	batRent = 0
+	batReturn = 0
 		
-		while buttonPress:
-			if(GPIO.input(RENTAL_BUTTON))
-				batRent = 1
-				buttonPress = 0
-			elif(GPIO.input(RETURN_BUTTON))
-				batReturn = 1
-				buttonPress = 0
-			time.sleep(0.1)
+	while buttonPress:
+		if(GPIO.input(RENTAL_BUTTON))
+			batRent = 1
+			buttonPress = 0
+		elif(GPIO.input(RETURN_BUTTON))
+			batReturn = 1
+			buttonPress = 0
+		time.sleep(0.1)
 	
-		buttonPress = 1
+	buttonPress = 1
 		
 	#Rentals:
 	if (batRent) :
-		serverConnection = serverPing ('http://52.63.139.51/api/alive' )	#Check if server can be contacted
+		serverConnection = serverPing ('http://52.63.34.239:9000/api/alive')	#Check if server can be contacted
 		print "This is a battery rental"
 		if (serverConnection) :												#If I can contact server
 			#Determine which battery is free			
 			if (batteryOneCharged):											#Proceed through list of batteries
-				allocatedBattery = 1
-				batOneAlloc = 1
-				GPIO.output(SLOT_ONE_LED,GPIO.HIGH)
-				
+				allocatedBattery = 1			
 			elif (batteryTwoCharged):
-				allocatedBattery = 2
-				batTwoAlloc = 1
-				GPIO.output(SLOT_TWO_LED,GPIO.HIGH)
-			
+				allocatedBattery = 2		
 			elif (batteryThreeCharged):
-				allocatedBattery = 3
-				batThreeAlloc = 1
-				GPIO.output(SLOT_THREE_LED_LED,GPIO.HIGH)
-			
+				allocatedBattery = 3	
 			else :
 				print "No batteries charged, please try another machine"	#If no batteries are charged
 				continue			
@@ -227,7 +225,7 @@ while True:
 			batTime = int(time.time())		#Time battery was rented
 			
 			#Send information to server
-			rentalURL = "http://52.63.139.51/api/requestbattery/machineId/%s/machineSlot/%s/cardId/%s/time/%s" % (MACHINE ID, allocatedBattery, cardID, batTime)
+			rentalURL = "http://52.63.34.239:9000/api/requestbattery/machineId/%s/machineSlot/%s/cardId/%s/time/%s" % (MACHINE ID, allocatedBattery, cardID, batTime)
 			print (rentalURL)		#TESTING
 			
 			#Contact URL and retrieve JSON object
@@ -237,18 +235,29 @@ while True:
 			print (rentalRes)
 
 			#Convert JSON into an object with attributes corresponding to dict keys.
-			jsonOb = json.loads(res,object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
-			print jsonOb.SOMETHING		
+			rentalJson = json.loads(res,object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
+			print rentalJson
 		
 			#Check if user is permitted to rent battery
-			if ():
-			
+			if (rentalJson.isUserBalancePositive == 'true') :
+				#Rent battery out to user
+					#SET LED INDICATING BATTERY, TELL USER TO REMOVE CARD AND BATTERY, UPDATE WHICH BATTERY IS REMOVED
+				if(allocatedBattery == 1) :
+					GPIO.output(SLOT_ONE_LED_LED,GPIO.HIGH)
+					batOneAlloc = 1
+
+				elif(allocatedBattery == 2) :
+					GPIO.output(SLOT_TWO_LED_LED_LED,GPIO.HIGH)
+					batTwoAlloc = 1					
+					
+				elif(allocatedBattery == 3) :
+					GPIO.output(SLOT_THREE_LED_LED_LED,GPIO.HIGH)	
+					batThreeAlloc = 1
+							
+				print "Your battery is indicated by the light, please remove battery and remove your card, thank you!"
 			else :
 				print "Insufficienct credit or user otherwise not permitted to rent battery - please remove card"
 				continue
-			
-			#Rent battery out to user
-				#SET LED INDICATING BATTERY, TELL USER TO REMOVE CARD AND BATTERY, UPDATE WHICH BATTERY IS REMOVED AND TIMESTAMP IT
 			
 		else :															#If I cannot contact server
 			#Read users current credit from card
@@ -298,7 +307,7 @@ while True:
 			
 				#Create string to insert into deque backlog
 				batTime = int(time.time())		#Time battery was rented
-				rentalURL = "http://52.63.139.51/api/requestbattery/machineId/%s/machineSlot/%s/cardId/%s/time/%s" % (MACHINE ID, allocatedBattery, cardID, batTime)
+				rentalURL = "http://52.63.34.239:9000/api/requestbattery/machineId/%s/machineSlot/%s/cardId/%s/time/%s" % (MACHINE ID, allocatedBattery, cardID, batTime)
 				backlogData.append(rentalURL)
 				print (rentalURL)		#TESTING				
 					
@@ -329,7 +338,7 @@ while True:
 		
 		batTime = int(time.time())		#Time battery was returned
 		
-		returnURL = "http://52.63.139.51/api/requestbattery/machineId/%s/machineSlot/%s/cardId/%s/time/%s" % (MACHINE ID, returnedBattery, cardID, batTime)		#Create the return url
+		returnURL = "http://52.63.34.239:9000/api/returnbattery/machineId/%s/machineSlot/%s/cardId/%s/time/%s" % (MACHINE ID, returnedBattery, cardID, batTime)		#Create the return url
 		serverConnection = serverPing ('52.63.139.51/api/alive' )									#Check if server can be contacted		
 		
 		#If I can contact server
@@ -338,15 +347,35 @@ while True:
 			#Contact URL and retrieve JSON object
 			returnRequest = urllib2.urlopen(returnURL)
 			resReturn = returnRequest.read()
+			
 			print "JSON OBJECT"		#TESTING
 			print (res)
 
 			#Convert JSON into an object with attributes corresponding to dict keys.
-			jsonOb = json.loads(res,object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
-			print jsonOb.SOMETHING				
+			returnJson = json.loads(res,object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
+			print returnJson				
 			
 			#Write credit to card
-		
+			credit = str(returnJson.balance)
+			#Authenticate Block 1
+			if not pn532.mifare_classic_authenticate_block(uid, 1, PN532.MIFARE_CMD_AUTH_B,
+																				   [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]):
+				print('Error! Failed to authenticate block 1 with the card.')
+				continue
+
+			#Data array size must by 16 bytes
+			data = bytearray(16)
+			dataWrite = bytes(credit, 'utf-8')
+			data[0:len(dataWrite)] = dataWrite
+			print(len(data))
+
+			# Write the card.
+			if not pn532.mifare_classic_write_block(1, data):
+				print('Error! Failed to write to the card.')
+				continue
+				
+			print('Wrote card successfully!')	
+			print('Exiting Write Loop 1 \n')		
 		#If I cannot contact server	
 		else :
 			backlogData.append(returnURL)
