@@ -111,7 +111,8 @@ batteryOneCharged = 1
 batteryTwoCharged = 0
 batteryThreeCharged = 0
 
-batOneAlloc = 0
+#TESTING - SET ALLOC ONE TO 1 TO 1 FOR NOW
+batOneAlloc = 1
 batTwoAlloc = 0
 batThreeAlloc = 0
 
@@ -189,6 +190,7 @@ while True:
     
         #Card Scanning:
             cardID = pn532.read_passive_target()    #Check if card is scanned
+            #HAVE IT SO THAT IT HAS TO AUTHENTICATE THE BLOCK AS WELL TO PASS - SO WE CANT SCAN ANY OLD CARD
                         
 
             if cardID is None:              
@@ -207,10 +209,10 @@ while True:
     batReturn = 0
         
     while buttonPress:
-        if(~GPIO.input(RENTAL_BUTTON)) :
+        if(GPIO.input(RENTAL_BUTTON)) :
             batRent = 1
             buttonPress = 0
-        elif(~GPIO.input(RETURN_BUTTON)) :
+        elif(GPIO.input(RETURN_BUTTON)) :
             batReturn = 1
             buttonPress = 0
         time.sleep(0.1)
@@ -333,27 +335,44 @@ while True:
                 
     #Returns:
     elif (batReturn) :
-        print "This is a battery return - please put battery into empty slot then press return again"
-        
-        #ACTUALLY IN TERMS OF BATTERY RETURN THE ONLY POINT I NEED TO CONTACT SERVER IS AT THE END WHEN I SEND DATA AT THIS POINT - I CAN DO THE RETURN PROCESS FIRST
-        while (GPIO.input(RETURN_BUTTON)) : #MAY NEED TO MAKE THIS MORE EFFICIENT - LIKE CHECKING FOR BUTTON PRESSES FIRST
+        print "This is a battery return - please put battery into empty slot"
+        returnNot = 1
+        breakCount = 0
+        timeoutVar = 0
+
+        while (returnNot) :
+
         #Find which battery is returned by recording surge current
-            if ( batOneAlloc and (inaOne.getCurrent_mA() > 5)) :
+            if ( batOneAlloc and (inaOne.getCurrent_mA() > 10)) :
                 returnedBattery = 1
                 batOneAlloc = 0
+                returnNot = 0
                 
-            elif ( batTwoAllocAlloc and (inaTwo.getCurrent_mA() > 5)) :
+            elif ( batTwoAlloc and (inaTwo.getCurrent_mA() > 10)) :
                 returnedBattery = 2
-                batTwoAlloc = 0     
+                batTwoAlloc = 0
+                returnNot = 0
             
-            elif ( batThreeAllocAlloc and (inaThree.getCurrent_mA() > 5)) : 
+            elif ( batThreeAlloc and (inaThree.getCurrent_mA() > 10)) : 
                 returnedBattery = 3
-                batThreeAlloc = 0       
+                batThreeAlloc = 0
+                returnNot = 0
+
+            if (breakCount > 100) :  #A manual timeout if a battery is not returned within approx. 10 seconds
+                returnNot = 0
+                timeoutVar = 1
+                
+
+            time.sleep(0.1)
+            breakCount = breakCount + 1
+
+        if (timeoutVar) :       #If the return process timed out, return to the initial loop
+            continue
         
         batTime = int(time.time())      #Time battery was returned
         
         returnURL = "http://52.63.34.239:9000/api/returnbattery/machineId/%s/machineSlot/%s/cardId/%s/time/%s" % (machineID, (returnedBattery - 1), cardID, batTime)      #Create the return url
-        serverConnection = serverPing ('52.63.139.51/api/alive' )                                   #Check if server can be contacted       
+        serverConnection = serverPing ('http://52.63.34.239:9000/api/alive' )                                   #Check if server can be contacted       
         
         #If I can contact server
         if (serverConnection) :     
@@ -361,25 +380,22 @@ while True:
             #Contact URL and retrieve JSON object
             returnRequest = urllib2.urlopen(returnURL)
             resReturn = returnRequest.read()
-            
-            print "JSON OBJECT"     #TESTING
-            print (res)
 
             #Convert JSON into an object with attributes corresponding to dict keys.
             returnJson = json.loads(resReturn,object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
             print returnJson                
             
             #Write credit to card
-            credit = str(returnJson.balance)
+            credit = str(returnJson.credit)
             #Authenticate Block 1
-            if not pn532.mifare_classic_authenticate_block(uid, 1, PN532.MIFARE_CMD_AUTH_B,
+            if not pn532.mifare_classic_authenticate_block(cardID, 1, PN532.MIFARE_CMD_AUTH_B,
                                                                                    [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]):
                 print('Error! Failed to authenticate block 1 with the card.')
                 continue
 
             #Data array size must by 16 bytes
             data = bytearray(16)
-            dataWrite = bytes(credit, 'utf-8')
+            dataWrite = bytes(credit)
             data[0:len(dataWrite)] = dataWrite
             print(len(data))
 
@@ -394,7 +410,9 @@ while True:
         else :
             backlogData.append(returnURL)
             print (returnURL)       #TESTING
-            
+
+        if (returnedBattery == 1) :     #TODO - DO CASES FOR BATTERY SLOTS 2 AND THREE
+            GPIO.output(SLOT_ONE_LED, GPIO.HIGH)
         
     time.sleep(5)
     print "Execution finished"  #TESTING
