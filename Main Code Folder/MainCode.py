@@ -22,7 +22,7 @@ inaOne = INA219(0x40)       #Base, 0x40
 inaTwo = INA219(0x40)       #A0 Bridge 0x41
 inaThree = INA219(0x40)     #A1 Bridge 0x44
 
-timeoutTimer = 20
+timeoutTimer = 30
 
 #Initialize the Reader
 pn532 = initialise_RFID(18, 25, 23, 24)     #Configure PN532 to the correct I/O pins on the breakout board (i.e. IO18,IO25 etc.)
@@ -49,29 +49,30 @@ def serverPing ( urlString ):       #Accepts a string
 def serverHeartbeat () :
     threading.Timer(30.0, serverHeartbeat).start()
     serverContact = serverPing('http://52.63.34.239:9000/api/alive')
+    print 'Heartbeat'
 
     #Get Battery Current Draw:
     #Send battery current draw for connected batteries
-	if (~batOneAlloc):
-		batteryOneCurrentHeart = inaOne.getCurrent_mA()
-	else :
-		batteryOneCurrentHeart = 0
-	
-	if (~batTwoAlloc):
-		batteryTwoCurrentHeart = inaTwo.getCurrent_mA()
-	else :
-		batteryTwoCurrentHeart = 0
-	
-	if (~batThreeAlloc) :
-		batteryThreeCurrentHeart = inaThree.getCurrent_mA() 
-	else :
-		batteryThreeCurrentHeart = 0
-	
+    if (~batOneAlloc):
+        batteryOneCurrentHeart = inaOne.getCurrent_mA()
+    else :
+        batteryOneCurrentHeart = 0
+    
+    if (~batTwoAlloc):
+        batteryTwoCurrentHeart = inaTwo.getCurrent_mA()
+    else :
+        batteryTwoCurrentHeart = 0
+    
+    if (~batThreeAlloc) :
+        batteryThreeCurrentHeart = inaThree.getCurrent_mA() 
+    else :
+        batteryThreeCurrentHeart = 0
+    
     heartTime = int(time.time())
-	numRand = randint(0, 100)
-	
-	heartbeatURL = "http://52.63.34.239:9000/api/requestbattery/machineId/%s/time/%s/rngId/%s/chargeCurrent0/%s/chargeCurrent1/%s/chargeCurrent2/%s/chargeCurrent3/%s" % (machineID, heartTime, numRand, batteryOneCurrentHeart, batteryTwoCurrentHeart, batteryThreeCurrentHeart, 0)
-	
+    numRand = randint(0, 100)
+    
+    heartbeatURL = "http://52.63.34.239:9000/api/requestbattery/machineId/%s/time/%s/rngId/%s/chargeCurrent0/%s/chargeCurrent1/%s/chargeCurrent2/%s/chargeCurrent3/%s" % (machineID, heartTime, numRand, batteryOneCurrentHeart, batteryTwoCurrentHeart, batteryThreeCurrentHeart, 0)
+    
     if(serverContact) :
         #Send backlog data to server if any exists
         numBacklog = len(backlogData)
@@ -80,11 +81,11 @@ def serverHeartbeat () :
                 request = urllib2.urlopen(backlogData.pop(), timeout = timeoutTimer)   #Send backlog data
                 
         #Send current heartbeat data 
-			heartRequest = urllib2.urlopen(heartbeatURL, timeout = timeoutTimer)	#Send heartbeat data
-		
-    else :	
-		#Append heartbeat to backlog
-		backlogData.append(heartbeatURL)
+        heartRequest = urllib2.urlopen(heartbeatURL, timeout = timeoutTimer)    #Send heartbeat data
+        
+    else :  
+        #Append heartbeat to backlog
+        backlogData.append(heartbeatURL)
         
         
         
@@ -431,10 +432,10 @@ while True:
 
         if (returnedBattery == 1) :     
             GPIO.output(SLOT_ONE_LED, GPIO.HIGH)
-		elif (returnedBattery == 2) :
-			GPIO.output(SLOT_TWO_LED, GPIO.HIGH)
-		elif (returnedBattery == 3) :
-			GPIO.output(SLOT_THREE_LED, GPIO.HIGH)
+        elif (returnedBattery == 2) :
+            GPIO.output(SLOT_TWO_LED, GPIO.HIGH)
+        elif (returnedBattery == 3) :
+            GPIO.output(SLOT_THREE_LED, GPIO.HIGH)
         
     time.sleep(5)
     print "Execution finished"  #TESTING
