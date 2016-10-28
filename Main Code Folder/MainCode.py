@@ -133,7 +133,7 @@ batteryTwoCharged = 0
 batteryThreeCharged = 0
 
 #TESTING - SET ALLOC ONE TO 1 TO 1 FOR NOW
-batOneAlloc = 1
+batOneAlloc = 0
 batTwoAlloc = 0
 batThreeAlloc = 0
 
@@ -283,14 +283,17 @@ while True:
                 if(allocatedBattery == 1) :
                     GPIO.output(SLOT_ONE_LED,GPIO.HIGH)
                     batOneAlloc = 1
+					batteryOneCharged = 0
 
                 elif(allocatedBattery == 2) :
                     GPIO.output(SLOT_TWO_LED,GPIO.HIGH)
-                    batTwoAlloc = 1                 
+                    batTwoAlloc = 1  
+					batteryTwoCharged = 0
                     
                 elif(allocatedBattery == 3) :
                     GPIO.output(SLOT_THREE_LED,GPIO.HIGH)   
                     batThreeAlloc = 1
+					batteryThreeCharged = 0
                             
                 print "Your battery is indicated by the light, please remove battery and remove your card, thank you!"
             else :
@@ -328,16 +331,19 @@ while True:
                 if (batteryOneCharged):                                         #Proceed through list of batteries
                     allocatedBattery = 1
                     batOneAlloc = 1
+					batteryOneCharged = 0
                     GPIO.output(SLOT_ONE_LED,GPIO.HIGH) 
         
                 elif (batteryTwoCharged):
                     allocatedBattery = 2
                     batTwoAlloc = 1
+					batteryTwoCharged = 0
                     GPIO.output(SLOT_TWO_LED,GPIO.HIGH)     
                     
                 elif (batteryThreeCharged):
                     allocatedBattery = 3
                     batThreeAlloc = 1
+					batteryThreeCharged = 0
                     GPIO.output(SLOT_THREE_LED,GPIO.HIGH)       
                     
                 else :
@@ -365,17 +371,17 @@ while True:
         while (returnNot) :
 
         #Find which battery is returned by recording surge current
-            if ( batOneAlloc and (inaOne.getCurrent_mA() > 10)) :
+            if ( batOneAlloc and (inaOne.getCurrent_mA() > 5)) :
                 returnedBattery = 1
                 batOneAlloc = 0
                 returnNot = 0
                 
-            elif ( batTwoAlloc and (inaTwo.getCurrent_mA() > 10)) :
+            elif ( batTwoAlloc and (inaTwo.getCurrent_mA() > 5)) :
                 returnedBattery = 2
                 batTwoAlloc = 0
                 returnNot = 0
             
-            elif ( batThreeAlloc and (inaThree.getCurrent_mA() > 10)) : 
+            elif ( batThreeAlloc and (inaThree.getCurrent_mA() > 5)) : 
                 returnedBattery = 3
                 batThreeAlloc = 0
                 returnNot = 0
