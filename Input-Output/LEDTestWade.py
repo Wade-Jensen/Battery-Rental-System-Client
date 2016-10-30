@@ -19,7 +19,7 @@ GPIO.output(20,GPIO.HIGH)
 time.sleep(0.5)
 GPIO.output(20,GPIO.LOW)
 
-print('Battery 2')
+print('Battery 3')
 GPIO.output(21,GPIO.HIGH)
 time.sleep(0.5)
 GPIO.output(21,GPIO.LOW)

@@ -170,7 +170,7 @@ while True:
     GPIO.output(SLOT_TWO_LED,GPIO.LOW)  
     GPIO.output(SLOT_THREE_LED,GPIO.LOW)    
     
-	print "Please scan your ID card"
+    print "Please scan your ID card"
 	
     #Wait until a card is scanned
     while (cardScan != 1):
@@ -283,17 +283,17 @@ while True:
                 if(allocatedBattery == 1) :
                     GPIO.output(SLOT_ONE_LED,GPIO.HIGH)
                     batOneAlloc = 1
-					batteryOneCharged = 0
+		    batteryOneCharged = 0
 
                 elif(allocatedBattery == 2) :
                     GPIO.output(SLOT_TWO_LED,GPIO.HIGH)
                     batTwoAlloc = 1  
-					batteryTwoCharged = 0
+		    batteryTwoCharged = 0
                     
                 elif(allocatedBattery == 3) :
                     GPIO.output(SLOT_THREE_LED,GPIO.HIGH)   
                     batThreeAlloc = 1
-					batteryThreeCharged = 0
+		    batteryThreeCharged = 0
                             
                 print "Your battery is indicated by the light, please remove battery and remove your card, thank you!"
             else :
@@ -331,19 +331,19 @@ while True:
                 if (batteryOneCharged):                                         #Proceed through list of batteries
                     allocatedBattery = 1
                     batOneAlloc = 1
-					batteryOneCharged = 0
+		    batteryOneCharged = 0
                     GPIO.output(SLOT_ONE_LED,GPIO.HIGH) 
         
                 elif (batteryTwoCharged):
                     allocatedBattery = 2
                     batTwoAlloc = 1
-					batteryTwoCharged = 0
+		    batteryTwoCharged = 0
                     GPIO.output(SLOT_TWO_LED,GPIO.HIGH)     
                     
                 elif (batteryThreeCharged):
                     allocatedBattery = 3
                     batThreeAlloc = 1
-					batteryThreeCharged = 0
+		    batteryThreeCharged = 0
                     GPIO.output(SLOT_THREE_LED,GPIO.HIGH)       
                     
                 else :
