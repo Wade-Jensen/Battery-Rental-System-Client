@@ -22,7 +22,7 @@ inaOne = INA219(0x40)       #Base, 0x40
 inaTwo = INA219(0x40)       #A0 Bridge 0x41
 inaThree = INA219(0x40)     #A1 Bridge 0x44
 
-timeoutTimer = 30\
+timeoutTimer = 30
 
 serverIP = 'http://52.63.34.239:9000'
 
@@ -137,8 +137,6 @@ batOneAlloc = 1
 batTwoAlloc = 0
 batThreeAlloc = 0
 
-#batteryOneConnected = #DEFINE THIS ABOVE IN THE INITIAL SETUP WHEN I POLL THE SERVER
-
 SLOT_ONE_LED = 16       #Battery One LED Output
 SLOT_TWO_LED = 20       #Battery Two LED Output
 SLOT_THREE_LED = 21     #Battery Three LED Output
@@ -187,9 +185,9 @@ while True:
                 fullTime = int(time.time())
                 chargeString = serverIP + "/api/fullcharge/machineId/%s/time/%s/machineSlot/%s" % (machineID, fullTime, 1)
                 if(serverConnection) :
-                                    fullCharge = urllib2.urlopen(returnURL)
+                    fullCharge = urllib2.urlopen(returnURL)
                 else :
-                                    backlogData.append(chargeString)
+                    backlogData.append(chargeString)
                 
             if(batteryTwoCurrent < 5 & batTwoAlloc == 0) :
                 batteryTwoCharged = 1
@@ -197,18 +195,18 @@ while True:
                 fullTime = int(time.time())
                 chargeString = serverIP + "/api/fullcharge/machineId/%s/time/%s/machineSlot/%s" % (machineID, fullTime, 2)
                 if(serverConnection) :
-                                    fullCharge = urllib2.urlopen(returnURL)
+                    fullCharge = urllib2.urlopen(returnURL)
                 else :
-                                    backlogData.append(chargeString)                
+                    backlogData.append(chargeString)                
             if(batteryThreeCurrent < 5 & batThreeAlloc == 0) :
                 batteryThreeCharged = 1
                 serverConnection = serverPing (serverIP + '/api/alive')        #Check if server can be contacted
                 fullTime = int(time.time())
                 chargeString = serverIP + "/api/fullcharge/machineId/%s/time/%s/machineSlot/%s" % (machineID, fullTime, 3)
                 if(serverConnection):
-                                    fullCharge = urllib2.urlopen(returnURL)
+                    fullCharge = urllib2.urlopen(returnURL)
                 else :
-                                    backlogData.append(chargeString)                
+                    backlogData.append(chargeString)                
     
         #Card Scanning:
             cardID = pn532.read_passive_target()    #Check if card is scanned
@@ -283,17 +281,17 @@ while True:
                 if(allocatedBattery == 1) :
                     GPIO.output(SLOT_ONE_LED,GPIO.HIGH)
                     batOneAlloc = 1
-		    batteryOneCharged = 0
+                    batteryOneCharged = 0
 
                 elif(allocatedBattery == 2) :
                     GPIO.output(SLOT_TWO_LED,GPIO.HIGH)
                     batTwoAlloc = 1  
-		    batteryTwoCharged = 0
+                    batteryTwoCharged = 0
                     
                 elif(allocatedBattery == 3) :
                     GPIO.output(SLOT_THREE_LED,GPIO.HIGH)   
                     batThreeAlloc = 1
-		    batteryThreeCharged = 0
+                    batteryThreeCharged = 0
                             
                 print "Your battery is indicated by the light, please remove battery and remove your card, thank you!"
             else :
@@ -331,25 +329,27 @@ while True:
                 if (batteryOneCharged):                                         #Proceed through list of batteries
                     allocatedBattery = 1
                     batOneAlloc = 1
-		    batteryOneCharged = 0
+                    batteryOneCharged = 0
                     GPIO.output(SLOT_ONE_LED,GPIO.HIGH) 
         
                 elif (batteryTwoCharged):
                     allocatedBattery = 2
                     batTwoAlloc = 1
-		    batteryTwoCharged = 0
+                    batteryTwoCharged = 0
                     GPIO.output(SLOT_TWO_LED,GPIO.HIGH)     
                     
                 elif (batteryThreeCharged):
                     allocatedBattery = 3
                     batThreeAlloc = 1
-		    batteryThreeCharged = 0
+                    batteryThreeCharged = 0
                     GPIO.output(SLOT_THREE_LED,GPIO.HIGH)       
                     
                 else :
                     print "No batteries charged, please try another machine"    #If no batteries are charged
-                    continue            
-            
+                    continue
+                
+                print "Your battery is indicated by the light, please remove battery and remove your card, thank you!"
+                
                 #Create string to insert into deque backlog
                 batTime = int(time.time())      #Time battery was rented
                 rentalURL = serverIP + "/api/requestbattery/machineId/%s/machineSlot/%s/cardId/%s/time/%s" % (machineID, (allocatedBattery - 1), cardID, batTime)
@@ -395,6 +395,7 @@ while True:
             breakCount = breakCount + 1
 
         if (timeoutVar) :       #If the return process timed out, return to the initial loop
+            print "Return process timed out, please try again"
             continue
         
         batTime = int(time.time())      #Time battery was returned
@@ -406,12 +407,13 @@ while True:
         if (serverConnection) :     
 
             #Contact URL and retrieve JSON object
+            print "Contacting Server"
             returnRequest = urllib2.urlopen(returnURL)
             resReturn = returnRequest.read()
 
             #Convert JSON into an object with attributes corresponding to dict keys.
             returnJson = json.loads(resReturn,object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
-            print returnJson                
+                            
             
             #Write credit to card
             credit = str(returnJson.credit)
@@ -444,5 +446,8 @@ while True:
             GPIO.output(SLOT_TWO_LED, GPIO.HIGH)
         elif (returnedBattery == 3) :
             GPIO.output(SLOT_THREE_LED, GPIO.HIGH)
+            
+        print "Battery sucessfully returned, thank you and please remove your card!"
         
     time.sleep(5)
+
